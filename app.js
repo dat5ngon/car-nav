@@ -473,6 +473,9 @@ function initFavAddDialog() {
         showToast('Saved to favourites ★');
         updateFavButtonState();
         $('fav-add-modal').style.display = 'none';
+
+        // Re-open the Edit Favourites modal so the list is up to date
+        showFavModal();
     });
 
     // Cancel / close
