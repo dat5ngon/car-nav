@@ -773,10 +773,72 @@ function parseGmapUrl(url) {
     return null;
 }
 
+/**
+ * Check if a URL is a short Google Maps link that needs resolving.
+ */
+function isShortGmapLink(url) {
+    return /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps)\//i.test(url);
+}
+
+/**
+ * Resolve a short Google Maps link by following redirects via a CORS proxy.
+ * Returns a promise that resolves to the full URL.
+ */
+function resolveShortLink(shortUrl) {
+    // Use allorigins.win as a CORS proxy to follow the redirect
+    var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(shortUrl);
+
+    return fetch(proxyUrl)
+        .then(function(res) {
+            // The proxy follows redirects and returns the final page content
+            // We can get the final URL from the response URL, or parse the HTML for og:url / canonical
+            var text = res.text();
+            return text;
+        })
+        .then(function(html) {
+            // Try to extract the canonical/og:url from the HTML which contains the full Google Maps URL
+            var ogMatch = html.match(/content="(https:\/\/www\.google\.com\/maps\/[^"]+)"/);
+            if (ogMatch) return ogMatch[1];
+
+            // Try meta refresh or redirect URL
+            var refreshMatch = html.match(/url=(https:\/\/www\.google\.com\/maps\/[^"&]+)/i);
+            if (refreshMatch) return refreshMatch[1];
+
+            // Try any google maps URL in the page
+            var anyMatch = html.match(/(https:\/\/www\.google\.com\/maps\/place\/[^"'\s]+)/);
+            if (anyMatch) return anyMatch[1];
+
+            // Try coordinates pattern anywhere in the HTML
+            var coordMatch = html.match(/(https:\/\/www\.google\.com\/maps[^"'\s]*@-?\d+\.\d+,-?\d+\.\d+[^"'\s]*)/);
+            if (coordMatch) return coordMatch[1];
+
+            return null;
+        });
+}
+
 function importFromGmapLink() {
     var url = $('gmap-link-input').value.trim();
     if (!url) {
         showToast('Please paste a Google Maps link', 'error');
+        return;
+    }
+
+    // Handle short links by resolving them first
+    if (isShortGmapLink(url)) {
+        $('gmap-import-modal').style.display = 'none';
+        showToast('Resolving short link...');
+
+        resolveShortLink(url)
+            .then(function(fullUrl) {
+                if (!fullUrl) {
+                    showToast('Could not resolve short link. Try pasting the full URL from your browser.', 'error');
+                    return;
+                }
+                processGmapUrl(fullUrl);
+            })
+            .catch(function() {
+                showToast('Could not resolve short link. Try pasting the full URL from your browser.', 'error');
+            });
         return;
     }
 
@@ -788,6 +850,20 @@ function importFromGmapLink() {
 
     $('gmap-import-modal').style.display = 'none';
     showToast('Importing place...');
+    processGmapParsed(parsed);
+}
+
+function processGmapUrl(url) {
+    var parsed = parseGmapUrl(url);
+    if (!parsed) {
+        showToast('Could not parse coordinates from the resolved link', 'error');
+        return;
+    }
+    showToast('Importing place...');
+    processGmapParsed(parsed);
+}
+
+function processGmapParsed(parsed) {
 
     // Use Nominatim reverse geocoding to get address
     var reverseUrl = 'https://nominatim.openstreetmap.org/reverse?' + new URLSearchParams({
