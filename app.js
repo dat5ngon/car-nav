@@ -690,4 +690,139 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ── Init favourite add dialog ──
     initFavAddDialog();
+
+    // ── Import from Google Maps ──
+    $('import-gmap-btn').addEventListener('click', function() {
+        $('fav-modal').style.display = 'none';
+        showGmapImportDialog();
+    });
+    $('gmap-import-close-btn').addEventListener('click', function() {
+        $('gmap-import-modal').style.display = 'none';
+    });
+    $('gmap-import-cancel-btn').addEventListener('click', function() {
+        $('gmap-import-modal').style.display = 'none';
+    });
+    $('gmap-import-ok-btn').addEventListener('click', function() {
+        importFromGmapLink();
+    });
+    $('gmap-link-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') importFromGmapLink();
+    });
 });
+
+// ══════════════════════════════════════════════════════════════
+//  Google Maps link import
+// ══════════════════════════════════════════════════════════════
+
+function showGmapImportDialog() {
+    $('gmap-link-input').value = '';
+    $('gmap-import-modal').style.display = 'flex';
+    $('gmap-link-input').focus();
+}
+
+/**
+ * Parse a Google Maps URL and extract coordinates + place name.
+ *
+ * Supported formats:
+ *   https://www.google.com/maps/place/Place+Name/@21.028,105.854,15z/...
+ *   https://www.google.com/maps/@21.028,105.854,15z
+ *   https://www.google.com/maps?q=21.028,105.854
+ *   https://maps.google.com/maps?q=21.028,105.854
+ *   https://www.google.com/maps/place/...!3d21.028!4d105.854...
+ *   https://maps.app.goo.gl/... (short links -- will try to extract from redirect)
+ */
+function parseGmapUrl(url) {
+    url = url.trim();
+    var lat, lng, name;
+
+    // Pattern 1: /@lat,lng,zoom
+    var atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+    if (atMatch) {
+        lat = parseFloat(atMatch[1]);
+        lng = parseFloat(atMatch[2]);
+    }
+
+    // Pattern 2: ?q=lat,lng or &q=lat,lng
+    if (!lat) {
+        var qMatch = url.match(/[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        if (qMatch) {
+            lat = parseFloat(qMatch[1]);
+            lng = parseFloat(qMatch[2]);
+        }
+    }
+
+    // Pattern 3: !3d(lat)!4d(lng) in the URL path
+    if (!lat) {
+        var dMatch = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+        if (dMatch) {
+            lat = parseFloat(dMatch[1]);
+            lng = parseFloat(dMatch[2]);
+        }
+    }
+
+    // Extract place name from /place/Name/ segment
+    var placeMatch = url.match(/\/place\/([^/@]+)/);
+    if (placeMatch) {
+        name = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    }
+
+    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+        return { lat: lat, lng: lng, name: name || '' };
+    }
+
+    return null;
+}
+
+function importFromGmapLink() {
+    var url = $('gmap-link-input').value.trim();
+    if (!url) {
+        showToast('Please paste a Google Maps link', 'error');
+        return;
+    }
+
+    var parsed = parseGmapUrl(url);
+    if (!parsed) {
+        showToast('Could not parse coordinates from this link', 'error');
+        return;
+    }
+
+    $('gmap-import-modal').style.display = 'none';
+    showToast('Importing place...');
+
+    // Use Nominatim reverse geocoding to get address
+    var reverseUrl = 'https://nominatim.openstreetmap.org/reverse?' + new URLSearchParams({
+        lat: parsed.lat,
+        lon: parsed.lng,
+        format: 'json',
+        addressdetails: '1'
+    });
+
+    fetch(reverseUrl, { headers: { 'Accept-Language': 'en' } })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            var placeName = parsed.name || (data.name || data.display_name.split(',')[0]);
+            var address = data.display_name || '';
+
+            var place = {
+                name: placeName,
+                address: address,
+                lat: parsed.lat,
+                lng: parsed.lng
+            };
+
+            // Show the favourite add dialog pre-filled
+            lastRouteDest = place;
+            showFavAddDialog(place);
+        })
+        .catch(function() {
+            // Even if reverse geocoding fails, still allow saving with parsed data
+            var place = {
+                name: parsed.name || 'Imported place',
+                address: '',
+                lat: parsed.lat,
+                lng: parsed.lng
+            };
+            lastRouteDest = place;
+            showFavAddDialog(place);
+        });
+}

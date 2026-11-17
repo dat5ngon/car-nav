@@ -223,6 +223,37 @@
                 <div id="fav-edit-list" class="recent-list">
                     <p class="empty-state">No favourites yet</p>
                 </div>
+                <button id="import-gmap-btn" class="btn btn-secondary" style="margin-top:0.6rem;width:100%;gap:0.5rem;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Import from Google Maps
+                </button>
+            </div>
+        </div>
+
+        <!-- Import from Google Maps Dialog -->
+        <div id="gmap-import-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Import from Google Maps</h3>
+                    <button id="gmap-import-close-btn" class="icon-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.8rem;">Paste a Google Maps link to import the place as a favourite.</p>
+                <div style="margin-bottom:1rem;">
+                    <input type="text" id="gmap-link-input" style="width:100%;padding:0.5rem 0.7rem;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:0.85rem;outline:none;" placeholder="https://maps.google.com/...">
+                </div>
+                <div style="display:flex;gap:0.6rem;justify-content:flex-end;">
+                    <button id="gmap-import-cancel-btn" class="btn btn-secondary">Cancel</button>
+                    <button id="gmap-import-ok-btn" class="btn btn-primary">Import</button>
+                </div>
             </div>
         </div>
     </div>
