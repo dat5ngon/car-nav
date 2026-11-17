@@ -341,39 +341,154 @@ function showFavModal() {
 //  Save to favourites prompt
 // ══════════════════════════════════════════════════════════════
 
+/**
+ * Update the save-fav button appearance based on whether the current
+ * destination is already a favourite (solid star) or not (outline star).
+ */
+function updateFavButtonState() {
+    var btn = $('save-fav-btn');
+    if (!btn || !lastRouteDest) return;
+
+    var favs = loadFavourites();
+    var isFav = favs.some(function(f) {
+        return Math.abs(f.lat - lastRouteDest.lat) < 0.0001 &&
+               Math.abs(f.lng - lastRouteDest.lng) < 0.0001;
+    });
+
+    var svg = btn.querySelector('svg');
+    if (isFav) {
+        btn.classList.add('is-favourite');
+        btn.title = 'Remove from favourites';
+        if (svg) {
+            svg.setAttribute('fill', '#f5a623');
+            svg.setAttribute('stroke', '#f5a623');
+        }
+    } else {
+        btn.classList.remove('is-favourite');
+        btn.title = 'Save to favourites';
+        if (svg) {
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', '#888');
+        }
+    }
+}
+
 function promptSaveFavourite() {
     if (!lastRouteDest) {
         showToast('No destination to save', 'error');
         return;
     }
 
-    // Check if already a favourite
+    // Check if already a favourite -- if so, remove it (toggle)
     var favs = loadFavourites();
-    var alreadyFav = favs.some(function(f) {
-        return Math.abs(f.lat - lastRouteDest.lat) < 0.0001 &&
-               Math.abs(f.lng - lastRouteDest.lng) < 0.0001;
+    var favIdx = -1;
+    favs.forEach(function(f, i) {
+        if (Math.abs(f.lat - lastRouteDest.lat) < 0.0001 &&
+            Math.abs(f.lng - lastRouteDest.lng) < 0.0001) {
+            favIdx = i;
+        }
     });
 
-    if (alreadyFav) {
-        showToast('Already in favourites');
+    if (favIdx >= 0) {
+        removeFavourite(favIdx);
+        showToast('Removed from favourites');
+        updateFavButtonState();
         return;
     }
 
-    // Simple prompt for label
-    var label = prompt('Save as favourite.\nLabel:', lastRouteDest.name);
-    if (label === null) return; // cancelled
-    if (!label.trim()) label = lastRouteDest.name;
+    // Show the add-favourite dialog
+    showFavAddDialog(lastRouteDest);
+}
 
-    // Pick icon
-    var iconChoice = prompt(
-        'Choose icon (type a number):\n1. ⭐ Star\n2. 🏠 Home\n3. 🏢 Work\n4. 🏋️ Gym\n5. 🏫 School',
-        '1'
-    );
-    var icons = ['⭐', '🏠', '🏢', '🏋️', '🏫'];
-    var icon = icons[parseInt(iconChoice, 10) - 1] || '⭐';
+// ══════════════════════════════════════════════════════════════
+//  Confirm dialog (replaces browser confirm/alert)
+// ══════════════════════════════════════════════════════════════
 
-    addFavourite(lastRouteDest, label.trim(), icon);
-    showToast('Saved to favourites ★');
+function showConfirmDialog(title, message, onConfirm, okLabel) {
+    var modal = $('confirm-modal');
+    $('confirm-title').textContent = title;
+    $('confirm-message').textContent = message;
+
+    var okBtn = $('confirm-ok-btn');
+    var newOkBtn = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+    newOkBtn.id = 'confirm-ok-btn';
+    newOkBtn.textContent = okLabel || 'OK';
+    newOkBtn.className = 'btn btn-primary';
+    newOkBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+        if (onConfirm) onConfirm();
+    });
+
+    $('confirm-cancel-btn').onclick = function() { modal.style.display = 'none'; };
+    $('confirm-close-btn').onclick = function() { modal.style.display = 'none'; };
+
+    modal.style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  Add favourite dialog (replaces browser prompt)
+// ══════════════════════════════════════════════════════════════
+
+var selectedFavIcon = '⭐';
+
+function showFavAddDialog(place) {
+    var modal = $('fav-add-modal');
+    var labelInput = $('fav-label-input');
+    labelInput.value = place.name || '';
+    selectedFavIcon = '⭐';
+
+    // Reset icon selection
+    var iconBtns = document.querySelectorAll('.fav-icon-option');
+    iconBtns.forEach(function(btn) {
+        btn.classList.remove('selected');
+        if (btn.getAttribute('data-icon') === '⭐') {
+            btn.classList.add('selected');
+        }
+    });
+
+    modal.style.display = 'flex';
+    labelInput.focus();
+    labelInput.select();
+}
+
+function initFavAddDialog() {
+    // Icon picker
+    var iconBtns = document.querySelectorAll('.fav-icon-option');
+    iconBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            iconBtns.forEach(function(b) { b.classList.remove('selected'); });
+            btn.classList.add('selected');
+            selectedFavIcon = btn.getAttribute('data-icon');
+        });
+    });
+
+    // Save button
+    $('fav-add-save-btn').addEventListener('click', function() {
+        var label = $('fav-label-input').value.trim();
+        if (!label && lastRouteDest) label = lastRouteDest.name;
+        if (!label) label = 'Favourite';
+
+        addFavourite(lastRouteDest, label, selectedFavIcon);
+        showToast('Saved to favourites ★');
+        updateFavButtonState();
+        $('fav-add-modal').style.display = 'none';
+    });
+
+    // Cancel / close
+    $('fav-add-cancel-btn').addEventListener('click', function() {
+        $('fav-add-modal').style.display = 'none';
+    });
+    $('fav-add-close-btn').addEventListener('click', function() {
+        $('fav-add-modal').style.display = 'none';
+    });
+
+    // Enter key to save
+    $('fav-label-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            $('fav-add-save-btn').click();
+        }
+    });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -572,4 +687,7 @@ document.addEventListener('DOMContentLoaded', function() {
         closeMenu();
         syncImport();
     });
+
+    // ── Init favourite add dialog ──
+    initFavAddDialog();
 });

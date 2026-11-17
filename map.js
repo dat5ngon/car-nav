@@ -375,9 +375,11 @@ function _fetchRoute(originLatLng, destLatLng, destName, destAddress) {
             if (routeLine) map.removeLayer(routeLine);
             routeLine = L.geoJSON(route.geometry, {
                 style: {
-                    color: '#00e676',
-                    weight: 6,
-                    opacity: 0.9
+                    color: '#00b8ff',
+                    weight: 10,
+                    opacity: 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round'
                 }
             }).addTo(map);
 
@@ -418,6 +420,9 @@ function _fetchRoute(originLatLng, destLatLng, destName, destAddress) {
 
             $('route-panel').style.display = 'block';
             $('search-bar').style.display = 'none';
+
+            // Update favourite star icon state
+            updateFavButtonState();
 
             // Fit map to route
             map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });

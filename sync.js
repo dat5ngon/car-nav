@@ -61,23 +61,30 @@ function handleSyncError(err) {
     if (msg.indexOf('not authenticated') !== -1 || msg.indexOf('Not authenticated') !== -1) {
         promptSafePlaceSignIn();
     } else if (msg.indexOf('not responding') !== -1) {
-        showToast('Could not connect to Safe Place. Try refreshing.', 'error');
+        showConfirmDialog('Connection Issue', 'Could not connect to Safe Place.', function() {
+            window.open('https://dat5ngon.github.io/safe-place/', '_blank');
+        }, 'Open Safe Place');
     } else {
         showToast('Sync failed: ' + (msg || 'unknown error'), 'error');
     }
 }
 
 function promptSafePlaceSignIn() {
-    if (confirm('Sign in to Safe Place first, then try syncing again.\n\nOpen Safe Place now?')) {
-        window.open('https://dat5ngon.github.io/safe-place/', '_blank');
-        // Reload iframe when user returns so it picks up new auth
-        var onFocus = function() {
-            window.removeEventListener('focus', onFocus);
-            var frame = document.getElementById(SP_FRAME_ID);
-            if (frame) frame.src = frame.src;
-        };
-        window.addEventListener('focus', onFocus);
-    }
+    showConfirmDialog(
+        'Sign in Required',
+        'Sign in to Safe Place first, then try syncing again.',
+        function() {
+            window.open('https://dat5ngon.github.io/safe-place/', '_blank');
+            // Reload iframe when user returns so it picks up new auth
+            var onFocus = function() {
+                window.removeEventListener('focus', onFocus);
+                var frame = document.getElementById(SP_FRAME_ID);
+                if (frame) frame.src = frame.src;
+            };
+            window.addEventListener('focus', onFocus);
+        },
+        'Open Safe Place'
+    );
 }
 
 // ══════════════════════════════════════════════════════════════

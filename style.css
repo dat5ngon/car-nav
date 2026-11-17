@@ -320,52 +320,83 @@ body {
     left: 0;
     right: 0;
     z-index: 1000;
-    background: var(--glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--glass-border);
-    border-radius: var(--radius) var(--radius) 0 0;
-    padding: 1.2rem;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px 20px 0 0;
+    padding: 1.4rem 1.4rem 1.2rem;
+    box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.12);
+    color: #222;
 }
 
 .route-header {
-    margin-bottom: 1rem;
+    margin-bottom: 1.1rem;
 }
 
 .route-info {
     display: flex;
     align-items: baseline;
     gap: 0.8rem;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.4rem;
 }
 
 .route-duration {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--nav-green);
+    font-size: 2rem;
+    font-weight: 800;
+    color: #2eaa6e;
+    letter-spacing: -0.5px;
 }
 
 .route-distance {
-    font-size: 1rem;
-    color: var(--text-muted);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #666;
 }
 
 .route-dest {
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    font-size: 0.9rem;
+    color: #555;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.4;
 }
 
 .route-actions {
     display: flex;
     gap: 0.6rem;
+    align-items: center;
 }
 
 .route-actions .btn-nav {
     flex: 1;
+}
+
+.route-actions .btn-secondary {
+    background: rgba(0, 0, 0, 0.06);
+    color: #444;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.route-actions .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Favourite star button in route panel */
+#save-fav-btn svg {
+    transition: transform 0.2s;
+}
+
+#save-fav-btn.is-favourite svg {
+    fill: #f5a623;
+    color: #f5a623;
+}
+
+#save-fav-btn:not(.is-favourite) svg {
+    fill: none;
+    stroke: #888;
+    stroke-width: 1.8;
 }
 
 /* ── Navigation Panel ── */
@@ -930,6 +961,42 @@ body {
 
 .fav-edit-item .icon-btn {
     color: var(--danger);
+}
+
+/* ── Favourite icon picker ── */
+
+.fav-icon-option {
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.fav-icon-option:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+}
+
+.fav-icon-option.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: scale(1.1);
+}
+
+/* ── Confirm dialog message ── */
+
+.confirm-message {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
 }
 
 /* ── Responsive ── */
