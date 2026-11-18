@@ -490,10 +490,10 @@ function buildInstruction(step) {
 function startNavigation() {
     if (!lastRouteDest) return;
 
-    // Build Google Maps directions URL
+    // Build Google Maps directions URL with dir_action=navigate to auto-start navigation
     var dest = lastRouteDest.lat + ',' + lastRouteDest.lng;
     var gmapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' +
-        encodeURIComponent(dest) + '&travelmode=driving';
+        encodeURIComponent(dest) + '&travelmode=driving&dir_action=navigate';
 
     // If a custom origin is set, include it; otherwise Google Maps uses current location
     if (customOrigin) {
