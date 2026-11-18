@@ -490,19 +490,43 @@ function buildInstruction(step) {
 function startNavigation() {
     if (!lastRouteDest) return;
 
-    // Build Google Maps directions URL with dir_action=navigate to auto-start navigation
-    var dest = lastRouteDest.lat + ',' + lastRouteDest.lng;
-    var gmapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' +
-        encodeURIComponent(dest) + '&travelmode=driving&dir_action=navigate';
+    var destCoords = lastRouteDest.lat + ',' + lastRouteDest.lng;
+    var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // If a custom origin is set, include it; otherwise Google Maps uses current location
-    if (customOrigin) {
-        var origin = customOrigin.lat + ',' + customOrigin.lng;
-        gmapUrl += '&origin=' + encodeURIComponent(origin);
+    if (isMobile && /Android/i.test(navigator.userAgent)) {
+        // Android: use google.navigation intent to launch Google Maps navigation directly
+        var navUrl = 'google.navigation:q=' + destCoords + '&mode=d';
+        window.location.href = navUrl;
+    } else if (isMobile) {
+        // iOS: use comgooglemaps scheme, fall back to web URL
+        var iosUrl = 'comgooglemaps://?daddr=' + destCoords + '&directionsmode=driving&navigate=yes';
+        var webUrl = 'https://www.google.com/maps/dir/?api=1&destination=' +
+            encodeURIComponent(destCoords) + '&travelmode=driving&dir_action=navigate';
+
+        // Try native app first, fall back to web
+        var fallbackTimer = setTimeout(function() {
+            window.open(webUrl, '_blank');
+        }, 1500);
+
+        window.location.href = iosUrl;
+
+        // If the app opened, cancel the fallback
+        window.addEventListener('blur', function onBlur() {
+            clearTimeout(fallbackTimer);
+            window.removeEventListener('blur', onBlur);
+        });
+    } else {
+        // Desktop: open Google Maps directions (navigation mode not available on desktop web)
+        var gmapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' +
+            encodeURIComponent(destCoords) + '&travelmode=driving';
+
+        if (customOrigin) {
+            var origin = customOrigin.lat + ',' + customOrigin.lng;
+            gmapUrl += '&origin=' + encodeURIComponent(origin);
+        }
+
+        window.open(gmapUrl, '_blank');
     }
-
-    // Open Google Maps in a new tab/window
-    window.open(gmapUrl, '_blank');
 }
 
 function advanceStep(userPos) {
