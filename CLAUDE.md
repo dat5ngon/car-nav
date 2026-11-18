@@ -31,3 +31,4 @@ python -m http.server 3004 --bind 127.0.0.1
 - OSRM demo server is for personal/development use. For production traffic, deploy your own OSRM instance.
 - Nominatim has a usage policy: max 1 request/second, include a valid User-Agent. The 400ms debounce on search handles this.
 - Avoid tolls/highways/ferries preferences are stored but OSRM's public demo doesn't support them. A custom OSRM instance with custom profiles would.
+- **Start button** opens Google Maps directions in a new tab instead of using in-app turn-by-turn navigation. This provides full Google Maps routing with voice guidance, lane assist, and real-time traffic.

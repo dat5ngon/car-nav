@@ -488,29 +488,21 @@ function buildInstruction(step) {
 // ══════════════════════════════════════════════════════════════
 
 function startNavigation() {
-    if (routeSteps.length === 0) return;
+    if (!lastRouteDest) return;
 
-    currentStepIndex = 0;
+    // Build Google Maps directions URL
+    var dest = lastRouteDest.lat + ',' + lastRouteDest.lng;
+    var gmapUrl = 'https://www.google.com/maps/dir/?api=1&destination=' +
+        encodeURIComponent(dest) + '&travelmode=driving';
 
-    $('route-panel').style.display = 'none';
-    $('nav-panel').style.display = 'block';
-    $('search-bar').style.display = 'none';
-    $('my-location-btn').style.display = 'none';
-
-    updateNavInstruction();
-    updateNavEta();
-
-    if (navigator.geolocation) {
-        navWatchId = navigator.geolocation.watchPosition(function(pos) {
-            var loc = [pos.coords.latitude, pos.coords.longitude];
-            updateUserMarker(loc);
-            map.setView(loc, 17);
-
-            advanceStep(loc);
-        }, function() {
-            // Watch error -- continue
-        }, { enableHighAccuracy: true, maximumAge: 2000 });
+    // If a custom origin is set, include it; otherwise Google Maps uses current location
+    if (customOrigin) {
+        var origin = customOrigin.lat + ',' + customOrigin.lng;
+        gmapUrl += '&origin=' + encodeURIComponent(origin);
     }
+
+    // Open Google Maps in a new tab/window
+    window.open(gmapUrl, '_blank');
 }
 
 function advanceStep(userPos) {
