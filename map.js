@@ -490,6 +490,16 @@ function buildInstruction(step) {
 function startNavigation() {
     if (!lastRouteDest) return;
 
+    // Check if running inside the native Datcraft app
+    if (window.Datcraft && window.Datcraft.startNavigation) {
+        window.Datcraft.startNavigation(
+            lastRouteDest.lat,
+            lastRouteDest.lng,
+            lastRouteDest.name || ''
+        );
+        return;
+    }
+
     var destCoords = lastRouteDest.lat + ',' + lastRouteDest.lng;
     var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 

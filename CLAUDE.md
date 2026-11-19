@@ -32,3 +32,4 @@ python -m http.server 3004 --bind 127.0.0.1
 - Nominatim has a usage policy: max 1 request/second, include a valid User-Agent. The 400ms debounce on search handles this.
 - Avoid tolls/highways/ferries preferences are stored but OSRM's public demo doesn't support them. A custom OSRM instance with custom profiles would.
 - **Start button** opens Google Maps directions in a new tab instead of using in-app turn-by-turn navigation. This provides full Google Maps routing with voice guidance, lane assist, and real-time traffic.
+- **Datcraft JS bridge**: when running inside the native Datcraft Android app, `startNavigation()` calls `window.Datcraft.startNavigation(lat, lng, name)` instead of opening Google Maps externally. The native app handles launching Google Maps and creating a floating WebView overlay.
